@@ -10,7 +10,6 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.HttpStatusEntryPoint
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-import kotlin.jvm.java
 
 @Configuration
 class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
@@ -25,7 +24,7 @@ class SecurityConfig(private val jwtAuthFilter: JwtAuthFilter) {
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
                 it.requestMatchers(
-                    "/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**"
+                    "/auth/**", "/error", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**"
                 ).permitAll()
                     .anyRequest().authenticated()
             }
