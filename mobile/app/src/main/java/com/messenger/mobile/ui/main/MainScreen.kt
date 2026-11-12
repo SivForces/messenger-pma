@@ -17,10 +17,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,8 +30,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.messenger.mobile.MessengerApp
+import com.messenger.mobile.data.AppSettings
 import com.messenger.mobile.data.MeResponse
 import com.messenger.mobile.data.UserSummary
+import com.messenger.mobile.data.toUserMessage
 import com.messenger.mobile.ui.chat.ChatScreen
 import com.messenger.mobile.ui.chat.ChatViewModel
 import com.messenger.mobile.ui.chats.ChatsScreen
@@ -39,6 +43,7 @@ import com.messenger.mobile.ui.profile.ProfileScreen
 import com.messenger.mobile.ui.search.SearchUsersScreen
 import com.messenger.mobile.ui.search.SearchViewModel
 import com.messenger.mobile.ui.settings.SettingsScreen
+import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
 private fun chatRoute(chatId: Long, partner: UserSummary) =
@@ -77,6 +82,9 @@ private fun TabScaffold(
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
     val container = (LocalContext.current.applicationContext as MessengerApp).container
+    val settings by container.settingsStore.settings
+        .collectAsStateWithLifecycle(initialValue = AppSettings())
+    val scope = rememberCoroutineScope()
     var me by remember { mutableStateOf<MeResponse?>(null) }
     LaunchedEffect(Unit) {
         me = try {
@@ -108,19 +116,36 @@ fun MainScreen(onLogout: () -> Unit) {
                     }
                 }
             ) { padding ->
-                ChatsScreen(vm, Modifier.padding(padding)) { chat ->
-                    nav.navigate(chatRoute(chat.id, chat.partner))
+                ChatsScreen(vm, settings.gridLayout, Modifier.padding(padding)) { chat ->
+                nav.navigate(chatRoute(chat.id, chat.partner))
                 }
             }
         }
         composable("settings") {
             TabScaffold("settings", me?.displayName, onTab) { padding ->
-                SettingsScreen(me, onLogout, Modifier.padding(padding))
+                SettingsScreen(
+                    me = me,
+                    settings = settings,
+                    onGrid = { scope.launch { container.settingsStore.setGrid(it) } },
+                    onTheme = { scope.launch { container.settingsStore.setTheme(it) } },
+                    onDynamic = { scope.launch { container.settingsStore.setDynamic(it) } },
+                    onLogout = onLogout,
+                    modifier = Modifier.padding(padding)
+                )
             }
         }
         composable("profile") {
             TabScaffold("profile", me?.displayName, onTab) { padding ->
-                ProfileScreen(me, Modifier.padding(padding))
+                ProfileScreen(me, Modifier.padding(padding)) { req ->
+                    try {
+                        me = container.api.updateMe(req)
+                        null
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        e.toUserMessage()
+                    }
+                }
             }
         }
         composable("search") {

@@ -15,6 +15,8 @@ object ApiConfig {
 class AppContainer(context: Context) {
     val tokenStore = TokenStore(context)
 
+    val settingsStore = SettingsStore(context)
+
     @Volatile
     var sessionToken: String? = null
 

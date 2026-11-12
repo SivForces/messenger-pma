@@ -3,14 +3,13 @@ package com.messenger.mobile.data
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
 data class RegisterRequest(val username: String, val displayName: String, val password: String)
 data class LoginRequest(val username: String, val password: String)
 data class AuthResponse(val token: String, val userId: Long, val username: String, val displayName: String)
-
-data class MeResponse(val id: Long, val username: String, val displayName: String)
 data class UserSummary(val id: Long, val username: String, val displayName: String, val avatarUrl: String?)
 data class MessageDto(
     val id: Long, val chatId: Long, val senderId: Long,
@@ -22,8 +21,21 @@ data class ChatDto(
 )
 data class CreateChatRequest(val userId: Long)
 data class SendMessageRequest(val text: String)
+data class MeResponse(
+    val id: Long, val username: String, val displayName: String,
+    val phone: String?, val bio: String?, val birthDate: String?,
+    val avatarUrl: String?,
+    val showPhone: Boolean, val showBirthDate: Boolean, val showBio: Boolean
+)
+
+data class UpdateProfileRequest(
+    val displayName: String, val phone: String?, val bio: String?, val birthDate: String?
+)
 
 interface ApiService {
+    @PUT("users/me")
+    suspend fun updateMe(@Body req: UpdateProfileRequest): MeResponse
+
     @POST("auth/register")
     suspend fun register(@Body req: RegisterRequest): AuthResponse
 

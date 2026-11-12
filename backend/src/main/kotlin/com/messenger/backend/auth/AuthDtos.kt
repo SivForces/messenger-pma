@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size
 
 data class RegisterRequest(
     @field:Size(min = 3, max = 32)
-    @field:Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Лише латиниця, цифри та _")
+    @field:Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Only letters, numbers and _")
     val username: String,
 
     @field:NotBlank @field:Size(max = 64)

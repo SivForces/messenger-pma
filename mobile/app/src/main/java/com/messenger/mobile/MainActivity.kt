@@ -4,15 +4,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.messenger.mobile.data.AppSettings
+import com.messenger.mobile.data.ThemeMode
 import com.messenger.mobile.ui.auth.AuthViewModel
 import com.messenger.mobile.ui.auth.LoginScreen
 import com.messenger.mobile.ui.auth.SessionState
@@ -24,7 +29,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MobileTheme {
+            val container = (application as MessengerApp).container
+            val settings by container.settingsStore.settings
+                .collectAsStateWithLifecycle(initialValue = AppSettings())
+            val darkTheme = when (settings.themeMode) {
+                ThemeMode.System -> isSystemInDarkTheme()
+                ThemeMode.Light -> false
+                ThemeMode.Dark -> true
+            }
+            MobileTheme(darkTheme = darkTheme, dynamicColor = settings.dynamicColor) {
                 val vm: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
                 when (vm.session) {
                     SessionState.Loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
